@@ -1,0 +1,81 @@
+{
+  "version": "2.0.0",
+  "darkMode": true,
+  "gridEnabling": false,
+  "currentViewName": null,
+  "defaultView": {
+    "detailLevel": "All",
+    "tablePositions": [
+      {
+        "name": "usuarios",
+        "schemaName": "public",
+        "x": 12,
+        "y": 12
+      },
+      {
+        "name": "oficinas",
+        "schemaName": "public",
+        "x": 12,
+        "y": 378
+      },
+      {
+        "name": "tareas",
+        "schemaName": "public",
+        "x": 526.9622135230438,
+        "y": 50.9559586541985
+      },
+      {
+        "name": "asignaciones_tarea",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 12
+      },
+      {
+        "name": "atenciones",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 346
+      },
+      {
+        "name": "evidencias",
+        "schemaName": "public",
+        "x": 1816.648828125,
+        "y": 12
+      },
+      {
+        "name": "comentarios_tarea",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 776
+      },
+      {
+        "name": "notificaciones",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 1014
+      },
+      {
+        "name": "solicitudes_whatsapp",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 1338
+      },
+      {
+        "name": "equipos",
+        "schemaName": "public",
+        "x": 535.13837890625,
+        "y": 717
+      },
+      {
+        "name": "formatos_atencion",
+        "schemaName": "public",
+        "x": 1183.50966796875,
+        "y": 1640
+      }
+    ],
+    "tableGroupCollapseStates": [],
+    "stickyNoteLayouts": [],
+    "referencePaths": []
+  },
+  "views": {}
+}

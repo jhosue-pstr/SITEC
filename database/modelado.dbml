@@ -1,0 +1,303 @@
+// =====================================================
+// SISTEMA DE GESTIÓN DE SOPORTE TÉCNICO Y EVIDENCIAS
+// =====================================================
+
+// Usuarios del sistema: jefe, practicante y solicitante
+Table usuarios {
+  id integer [pk, increment]
+
+  nombres varchar(100) [not null]
+  apellidos varchar(100) [not null]
+
+  correo varchar(150) [unique]
+  telefono varchar(20)
+
+  // jefe | practicante | solicitante
+  rol varchar(30) [not null]
+
+  activo boolean [default: true]
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+// Oficinas o áreas de la municipalidad
+Table oficinas {
+  id integer [pk, increment]
+
+  nombre varchar(150) [not null, unique]
+  ubicacion varchar(200)
+  descripcion varchar(255)
+
+  created_at timestamp [default: `now()`]
+}
+
+// Solicitudes o tareas de soporte técnico
+Table tareas {
+  id integer [pk, increment]
+
+  // Ejemplo visual: ST-00025
+  codigo varchar(20) [not null, unique]
+
+  titulo varchar(150) [not null]
+  descripcion text [not null]
+
+  // computadora | impresora | red | correo | software | asistencia | otro
+  tipo_soporte varchar(50) [not null]
+
+  // baja | media | alta | urgente
+  prioridad varchar(20) [not null, default: 'media']
+
+  // pendiente | asignada | en_proceso | en_espera | finalizada | observada | cancelada
+  estado varchar(30) [not null, default: 'pendiente']
+
+  ubicacion_detalle varchar(200)
+
+  solicitante_id integer [not null]
+  oficina_id integer
+
+  // Puede ser null mientras la tarea está disponible
+  practicante_asignado_id integer
+
+  fecha_registro timestamp [default: `now()`]
+  fecha_asignacion timestamp
+  fecha_inicio timestamp
+  fecha_finalizacion timestamp
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+// Historial de quién asignó, aceptó o reasignó una tarea.
+// Esto evita perder el historial si la tarea cambia de practicante.
+Table asignaciones_tarea {
+  id integer [pk, increment]
+
+  tarea_id integer [not null]
+  practicante_id integer [not null]
+
+  // autoaceptada | asignada_por_jefe | reasignada
+  tipo_asignacion varchar(30) [not null]
+
+  asignado_por_id integer
+  fecha_asignacion timestamp [default: `now()`]
+  fecha_fin_asignacion timestamp
+
+  activa boolean [default: true]
+}
+
+// Registro técnico que realiza el practicante al atender la tarea
+Table atenciones {
+  id integer [pk, increment]
+
+  tarea_id integer [not null, unique]
+  practicante_id integer [not null]
+
+  diagnostico text
+  actividades_realizadas text
+  solucion_aplicada text
+  observaciones text
+
+  tiempo_atencion_minutos integer
+
+  fecha_atencion timestamp [default: `now()`]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+// Fotografías, PDFs, formatos firmados u otros archivos de evidencia
+Table evidencias {
+  id integer [pk, increment]
+
+  tarea_id integer [not null]
+  atencion_id integer
+
+  nombre_archivo varchar(255) [not null]
+  url_archivo varchar(500) [not null]
+
+  // foto_antes | foto_despues | formato_firmado | documento | otro
+  tipo_evidencia varchar(50) [not null]
+
+  descripcion varchar(255)
+
+  subido_por_id integer [not null]
+  created_at timestamp [default: `now()`]
+}
+
+// Comentarios internos entre jefe y practicantes
+Table comentarios_tarea {
+  id integer [pk, increment]
+
+  tarea_id integer [not null]
+  usuario_id integer [not null]
+
+  comentario text [not null]
+  created_at timestamp [default: `now()`]
+}
+
+// Notificaciones dentro del sistema
+Table notificaciones {
+  id integer [pk, increment]
+
+  usuario_id integer [not null]
+  tarea_id integer
+
+  titulo varchar(150) [not null]
+  mensaje text [not null]
+
+  leida boolean [default: false]
+  created_at timestamp [default: `now()`]
+}
+
+// Mensajes recibidos desde WhatsApp o formulario conversacional.
+// Esta tabla ayuda a guardar el origen y evitar duplicados.
+Table solicitudes_whatsapp {
+  id integer [pk, increment]
+
+  tarea_id integer
+
+  numero_whatsapp varchar(30) [not null]
+  mensaje_original text
+
+  estado_conversacion varchar(30) [default: 'recibido']
+  external_message_id varchar(150) [unique]
+
+  created_at timestamp [default: `now()`]
+}
+
+
+// =====================================================
+// EQUIPOS INFORMÁTICOS DE LA MUNICIPALIDAD
+// =====================================================
+
+// Se guarda una vez y se reutiliza en futuras atenciones.
+Table equipos {
+  id integer [pk, increment]
+
+  // computadora | laptop | impresora | monitor | router | switch | otro
+  tipo_equipo varchar(50) [not null]
+
+  codigo_patrimonial varchar(100) [unique]
+  numero_serie varchar(150) [unique]
+
+  marca varchar(100)
+  modelo varchar(150)
+
+  oficina_id integer
+  usuario_responsable_id integer
+
+  activo boolean [default: true]
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+// =====================================================
+// FORMATOS DE ATENCIÓN / INFORMES PDF
+// =====================================================
+
+// Esta tabla contiene exactamente los datos que irán
+// en el documento PDF de atención técnica.
+Table formatos_atencion {
+  id integer [pk, increment]
+
+  // Relación con la solicitud atendida.
+  tarea_id integer [not null, unique]
+
+  // Puede apuntar al equipo registrado. Es opcional porque
+  // una tarea podría ser, por ejemplo, soporte de sistema.
+  equipo_id integer
+
+  // ---------------------------------------------------
+  // DATOS PERSONALES DEL SOLICITANTE
+  // ---------------------------------------------------
+  nombres_solicitante varchar(100) [not null]
+  apellidos_solicitante varchar(100) [not null]
+
+  dni_solicitante varchar(15)
+  telefono_movil varchar(20)
+
+  // nombrado_permanente | cas | confianza | otro
+  regimen_laboral varchar(50)
+  regimen_laboral_especificar varchar(150)
+
+  cargo varchar(150)
+  unidad_organizacion varchar(200)
+
+  // ---------------------------------------------------
+  // DATOS DEL SOPORTE
+  // ---------------------------------------------------
+  // soporte_tecnico | soporte_sistemas | soporte_remoto
+  tipo_soporte_informatico varchar(50) [not null]
+
+  // Reporte inicial que hace el usuario.
+  reporte_usuario text [not null]
+
+  // Diagnóstico realizado por el practicante o técnico.
+  diagnostico_tecnico text
+
+  observaciones text
+
+  // ---------------------------------------------------
+  // FECHAS Y HORAS
+  // ---------------------------------------------------
+  fecha_atencion date
+  hora_atencion time
+
+  fecha_entrega date
+  hora_entrega time
+
+  // ---------------------------------------------------
+  // RESPONSABLES Y FIRMAS
+  // ---------------------------------------------------
+  responsable_atencion_id integer [not null]
+
+  // Nombre guardado como texto para que el PDF conserve
+  // el dato incluso si el usuario cambia luego su perfil.
+  nombre_responsable varchar(200)
+
+  // URL o ruta de imagen de firma.
+  firma_responsable_url varchar(500)
+  firma_solicitante_url varchar(500)
+
+  // pendiente_firma | entregado | firmado
+  estado_formato varchar(30) [default: 'pendiente_firma']
+
+  // Ruta del PDF generado.
+  pdf_url varchar(500)
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+
+Ref: tareas.solicitante_id > usuarios.id
+Ref: tareas.oficina_id > oficinas.id
+Ref: tareas.practicante_asignado_id > usuarios.id
+
+Ref: asignaciones_tarea.tarea_id > tareas.id
+Ref: asignaciones_tarea.practicante_id > usuarios.id
+Ref: asignaciones_tarea.asignado_por_id > usuarios.id
+
+Ref: atenciones.tarea_id > tareas.id
+Ref: atenciones.practicante_id > usuarios.id
+
+Ref: evidencias.tarea_id > tareas.id
+Ref: evidencias.atencion_id > atenciones.id
+Ref: evidencias.subido_por_id > usuarios.id
+
+Ref: comentarios_tarea.tarea_id > tareas.id
+Ref: comentarios_tarea.usuario_id > usuarios.id
+
+Ref: notificaciones.usuario_id > usuarios.id
+Ref: notificaciones.tarea_id > tareas.id
+
+Ref: solicitudes_whatsapp.tarea_id > tareas.oficina_id
+
+
+Ref: equipos.oficina_id > oficinas.id
+Ref: equipos.usuario_responsable_id > usuarios.id
+
+Ref: formatos_atencion.tarea_id > tareas.id
+Ref: formatos_atencion.equipo_id > equipos.id
+Ref: formatos_atencion.responsable_atencion_id > usuarios.id
