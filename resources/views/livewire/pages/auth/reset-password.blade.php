@@ -1,0 +1,95 @@
+<?php
+
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
+use Livewire\Volt\Component;
+
+new #[Layout('layouts.guest')] class extends Component
+{
+    #[Locked]
+    public string $token = '';
+
+    public string $correo = '';
+
+    public string $password = '';
+
+    public string $password_confirmation = '';
+
+    public function mount(string $token): void
+    {
+        $this->token = $token;
+        $this->correo = request()->string('email');
+    }
+
+    public function resetPassword(): void
+    {
+        $this->validate([
+            'token' => ['required'],
+            'correo' => ['required', 'string', 'email'],
+            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $status = Password::reset(
+            [
+                'correo' => $this->correo,
+                'password' => $this->password,
+                'password_confirmation' => $this->password_confirmation,
+                'token' => $this->token,
+            ],
+            function ($user) {
+                $user->forceFill([
+                    'password' => Hash::make($this->password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status != Password::PASSWORD_RESET) {
+            $this->addError('correo', __($status));
+
+            return;
+        }
+
+        Session::flash('status', __($status));
+
+        $this->redirectRoute('login', navigate: true);
+    }
+}; ?>
+
+<div>
+    <form wire:submit="resetPassword">
+        <div>
+            <x-input-label for="correo" :value="__('Correo')" />
+            <x-text-input wire:model="correo" id="correo" class="block mt-1 w-full" type="email" name="correo" required autofocus autocomplete="username" />
+            <x-input-error :messages="$errors->get('correo')" class="mt-2" />
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="password" :value="__('Nueva Contraseña')" />
+            <x-text-input wire:model="password" id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="password_confirmation" :value="__('Confirmar Contraseña')" />
+            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
+                          type="password"
+                          name="password_confirmation" required autocomplete="new-password" />
+            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        </div>
+
+        <div class="flex items-center justify-end mt-4">
+            <x-primary-button>
+                {{ __('Restablecer Contraseña') }}
+            </x-primary-button>
+        </div>
+    </form>
+</div>
