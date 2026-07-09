@@ -72,4 +72,9 @@ class Tarea extends Model
     {
         return $this->hasMany(AsignacionTarea::class);
     }
+
+    public function formatoAtencion()
+    {
+        return $this->hasOne(FormatoAtencion::class);
+    }
 }

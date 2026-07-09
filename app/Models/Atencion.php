@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Atencion extends Model
 {
+    protected $table = 'atenciones';
+
     protected $fillable = [
         'tarea_id',
         'practicante_id',
