@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notificacion;
 use App\Models\Oficina;
 use App\Models\Tarea;
 use App\Models\Usuario;
@@ -11,7 +12,21 @@ class TareaController extends Controller
 {
     public function index()
     {
-        $tareas = Tarea::with(['solicitante', 'oficina', 'practicanteAsignado'])->get();
+        $user = auth()->user();
+
+        $query = Tarea::with(['solicitante', 'oficina', 'practicanteAsignado']);
+
+        if (request('estado') === 'curso' && $user->rol === 'practicante') {
+            $query->where('practicante_asignado_id', $user->id)
+                ->whereIn('estado', ['asignado', 'en_proceso']);
+        } elseif ($user->rol === 'practicante') {
+            $query->where(function ($q) use ($user) {
+                $q->where('practicante_asignado_id', $user->id)
+                    ->orWhere('estado', 'pendiente');
+            });
+        }
+
+        $tareas = $query->get();
 
         return view('tareas.index', compact('tareas'));
     }
@@ -29,9 +44,16 @@ class TareaController extends Controller
     {
         $data = $request->all();
         $data['estado'] = 'pendiente';
-        Tarea::create($data);
+        $tarea = Tarea::create($data);
 
-        return redirect('/tareas');
+        Notificacion::create([
+            'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Nueva solicitud creada',
+            'mensaje' => "Se creó la solicitud {$tarea->codigo}: {$tarea->titulo}",
+        ]);
+
+        return redirect("/tareas/{$tarea->id}");
     }
 
     public function show(Tarea $tarea)
@@ -72,6 +94,13 @@ class TareaController extends Controller
             'fecha_asignacion' => now(),
         ]);
 
+        Notificacion::create([
+            'usuario_id' => $request->practicante_id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea asignada',
+            'mensaje' => "Se te ha asignado la tarea {$tarea->codigo}: {$tarea->titulo}",
+        ]);
+
         return redirect("/tareas/{$tarea->id}");
     }
 
@@ -82,12 +111,40 @@ class TareaController extends Controller
             'fecha_inicio' => now(),
         ]);
 
+        Notificacion::create([
+            'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea en proceso',
+            'mensaje' => "La tarea {$tarea->codigo} fue aceptada y está en proceso",
+        ]);
+
         return redirect("/tareas/{$tarea->id}");
     }
 
     public function iniciar(Request $request, Tarea $tarea)
     {
         return $this->aceptar($request, $tarea);
+    }
+
+    public function autoasignar(Request $request, Tarea $tarea)
+    {
+        abort_if(auth()->user()->rol !== 'practicante', 403);
+
+        $tarea->update([
+            'practicante_asignado_id' => auth()->id(),
+            'estado' => 'en_proceso',
+            'fecha_asignacion' => now(),
+            'fecha_inicio' => now(),
+        ]);
+
+        Notificacion::create([
+            'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea auto-asignada',
+            'mensaje' => 'El practicante '.auth()->user()->nombres." tomó la tarea {$tarea->codigo}",
+        ]);
+
+        return redirect("/tareas/{$tarea->id}");
     }
 
     public function finalizar(Request $request, Tarea $tarea)
@@ -97,6 +154,13 @@ class TareaController extends Controller
             'fecha_finalizacion' => now(),
         ]);
 
+        Notificacion::create([
+            'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea finalizada',
+            'mensaje' => "La tarea {$tarea->codigo} ha sido finalizada",
+        ]);
+
         return redirect("/tareas/{$tarea->id}");
     }
 
@@ -104,12 +168,26 @@ class TareaController extends Controller
     {
         $tarea->update(['estado' => 'observado']);
 
+        Notificacion::create([
+            'usuario_id' => $tarea->practicante_asignado_id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea observada',
+            'mensaje' => "La tarea {$tarea->codigo} fue marcada como observada",
+        ]);
+
         return redirect("/tareas/{$tarea->id}");
     }
 
     public function cancelar(Request $request, Tarea $tarea)
     {
         $tarea->update(['estado' => 'cancelado']);
+
+        Notificacion::create([
+            'usuario_id' => $tarea->practicante_asignado_id ?? Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Tarea cancelada',
+            'mensaje' => "La tarea {$tarea->codigo} ha sido cancelada",
+        ]);
 
         return redirect("/tareas/{$tarea->id}");
     }

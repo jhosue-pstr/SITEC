@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Atencion;
+use App\Models\Notificacion;
 use App\Models\Tarea;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
 
 class AtencionController extends Controller
@@ -21,6 +23,13 @@ class AtencionController extends Controller
         Atencion::create($data);
 
         $tarea->update(['estado' => 'finalizado', 'fecha_finalizacion' => now()]);
+
+        Notificacion::create([
+            'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
+            'tarea_id' => $tarea->id,
+            'titulo' => 'Atención registrada',
+            'mensaje' => "Se registró la atención para la tarea {$tarea->codigo}",
+        ]);
 
         return redirect("/tareas/{$tarea->id}");
     }

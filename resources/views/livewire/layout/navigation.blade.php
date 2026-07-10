@@ -22,6 +22,21 @@ new class extends Component
             class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('dashboard') ? 'bg-gray-700' : '' }}">
             Dashboard
         </a>
+        <a href="{{ route('tareas.index') }}" wire:navigate
+            class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('tareas.index') && !request('estado') ? 'bg-gray-700' : '' }}">
+            Tareas
+        </a>
+        @if(auth()->user()->rol === 'practicante')
+        <a href="{{ route('tareas.index', ['estado' => 'curso']) }}" wire:navigate
+            class="block px-3 py-2 rounded hover:bg-gray-700 {{ request('estado') === 'curso' ? 'bg-gray-700' : '' }}">
+            Tareas en curso
+        </a>
+        @endif
+        <a href="{{ route('notificaciones.index') }}" wire:navigate
+            class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('notificaciones.*') ? 'bg-gray-700' : '' }}">
+            Notificaciones
+        </a>
+        @if(auth()->user()->rol === 'jefe')
         <a href="{{ route('oficinas.index') }}" wire:navigate
             class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('oficinas.*') ? 'bg-gray-700' : '' }}">
             Oficinas
@@ -34,22 +49,17 @@ new class extends Component
             class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('usuarios.*') ? 'bg-gray-700' : '' }}">
             Usuarios
         </a>
-        <a href="{{ route('tareas.index') }}" wire:navigate
-            class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('tareas.*') ? 'bg-gray-700' : '' }}">
-            Tareas
-        </a>
-        <a href="{{ route('notificaciones.index') }}" wire:navigate
-            class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('notificaciones.*') ? 'bg-gray-700' : '' }}">
-            Notificaciones
-        </a>
         <a href="{{ route('solicitudes-whatsapp.index') }}" wire:navigate
             class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('solicitudes-whatsapp.*') ? 'bg-gray-700' : '' }}">
             Solicitudes WhatsApp
         </a>
+        @endif
+        @if(in_array(auth()->user()->rol, ['jefe', 'practicante']))
         <a href="{{ route('formatos-atencion.index') }}" wire:navigate
             class="block px-3 py-2 rounded hover:bg-gray-700 {{ request()->routeIs('formatos-atencion.*') ? 'bg-gray-700' : '' }}">
             Formatos de Atención
         </a>
+        @endif
     </nav>
 
     <div class="p-4 border-t border-gray-700">

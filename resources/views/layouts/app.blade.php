@@ -22,7 +22,7 @@
                     </header>
                 @endif
 
-                <main class="flex-1">
+                <main class="flex-1 flex flex-col min-h-0">
                     {{ $slot }}
                 </main>
             </div>

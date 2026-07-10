@@ -37,12 +37,14 @@
                             <td class="py-2">{{ $tarea->practicanteAsignado->nombres ?? '—' }}</td>
                             <td class="py-2">
                                 <a href="/tareas/{{ $tarea->id }}" class="text-green-600">Ver</a>
+                                @if(auth()->user()->rol === 'jefe')
                                 <a href="/tareas/{{ $tarea->id }}/edit" class="text-blue-600 ml-2">Editar</a>
                                 <form action="/tareas/{{ $tarea->id }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 ml-2">Eliminar</button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                         @endforeach

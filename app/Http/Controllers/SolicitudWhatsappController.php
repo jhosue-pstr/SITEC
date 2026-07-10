@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SolicitudWhatsapp;
+use App\Services\ChatbotService;
 use Illuminate\Http\Request;
 
 class SolicitudWhatsappController extends Controller
@@ -14,10 +15,70 @@ class SolicitudWhatsappController extends Controller
         return view('solicitudes-whatsapp.index', compact('solicitudes'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChatbotService $chatbot)
     {
-        SolicitudWhatsapp::create($request->all());
+        // --- WhatsApp Cloud API verification ---
+        if ($request->has('hub_challenge')) {
+            return response($request->hub_challenge);
+        }
 
-        return redirect('/solicitudes-whatsapp');
+        // --- WhatsApp Cloud API payload ---
+        if ($request->has('entry')) {
+            foreach ($request->input('entry', []) as $entry) {
+                foreach ($entry['changes'] ?? [] as $change) {
+                    $value = $change['value'] ?? [];
+                    $messages = $value['messages'] ?? [];
+
+                    foreach ($messages as $msg) {
+                        $numero = $msg['from'] ?? null;
+                        $texto = $msg['text']['body'] ?? '';
+                        $nombre = $value['contacts'][0]['profile']['name'] ?? null;
+
+                        SolicitudWhatsapp::create([
+                            'numero_whatsapp' => $numero,
+                            'mensaje_original' => $texto,
+                            'estado_conversacion' => 'recibido',
+                            'external_message_id' => $msg['id'] ?? null,
+                        ]);
+
+                        if ($numero) {
+                            $chatbot->handle($numero, $texto, $nombre);
+                        }
+                    }
+                }
+            }
+
+            return response()->json(['status' => 'ok']);
+        }
+
+        // --- Green API webhook payload ---
+        $body = $request->input('body');
+        if ($body) {
+            $messageData = $body['messageData'] ?? [];
+            $senderData = $body['senderData'] ?? [];
+            $textMessage = $messageData['textMessageData']['textMessage'] ?? '';
+            $chatId = $senderData['chatId'] ?? '';
+            $senderName = $senderData['senderName'] ?? '';
+
+            $numero = str_replace('@c.us', '', $chatId);
+
+            SolicitudWhatsapp::create([
+                'numero_whatsapp' => $numero,
+                'mensaje_original' => $textMessage,
+                'estado_conversacion' => 'recibido',
+            ]);
+
+            if ($numero) {
+                $chatbot->handle($numero, $textMessage, $senderName);
+            }
+
+            return response()->json(['status' => 'ok']);
+        }
+
+        // Fallback: direct POST
+        $data = $request->all();
+        SolicitudWhatsapp::create($data);
+
+        return response()->json(['status' => 'ok']);
     }
 }

@@ -23,9 +23,11 @@
                 </dl>
 
                 <div class="mt-4 space-x-2">
+                    @if(in_array(auth()->user()->rol, ['jefe', 'practicante']))
                     <a href="/tareas/{{ $tarea->id }}/edit" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Editar</a>
+                    @endif
 
-                    @if($tarea->estado == 'pendiente')
+                    @if($tarea->estado == 'pendiente' && auth()->user()->rol === 'jefe')
                     <form action="/tareas/{{ $tarea->id }}/asignar" method="POST" class="inline">
                         @csrf
                         <select name="practicante_id" required class="border rounded px-2 py-1 text-sm" onchange="this.form.submit()">
@@ -37,18 +39,18 @@
                     </form>
                     @endif
 
-                    @if($tarea->estado == 'asignado' && auth()->id() == $tarea->practicante_asignado_id)
+                    @if($tarea->estado == 'asignado' && auth()->id() == $tarea->practicante_asignado_id && auth()->user()->rol === 'practicante')
                     <form action="/tareas/{{ $tarea->id }}/aceptar" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded text-sm">Aceptar Tarea</button>
                     </form>
                     @endif
 
-                    @if(in_array($tarea->estado, ['en_proceso']))
+                    @if(in_array($tarea->estado, ['en_proceso']) && auth()->user()->rol === 'practicante')
                     <a href="/tareas/{{ $tarea->id }}/atenciones/create" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Finalizar</a>
                     @endif
 
-                    @if(in_array($tarea->estado, ['pendiente', 'asignado', 'en_proceso']))
+                    @if(in_array($tarea->estado, ['pendiente', 'asignado', 'en_proceso']) && auth()->user()->rol === 'jefe')
                     <form action="/tareas/{{ $tarea->id }}/cancelar" method="POST" class="inline" onsubmit="return confirm('¿Cancelar tarea?')">
                         @csrf
                         <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Cancelar</button>
@@ -87,7 +89,15 @@
                     <tbody>
                         @foreach($tarea->evidencias as $evidencia)
                         <tr class="border-b">
-                            <td class="py-2">{{ $evidencia->nombre_archivo }}</td>
+                            <td class="py-2">
+                                @if($evidencia->url_archivo && !str_starts_with($evidencia->url_archivo, 'http'))
+                                    <a href="{{ \Storage::url($evidencia->url_archivo) }}" target="_blank" class="text-blue-600 underline">{{ $evidencia->nombre_archivo }}</a>
+                                @elseif($evidencia->url_archivo)
+                                    <a href="{{ $evidencia->url_archivo }}" target="_blank" class="text-blue-600 underline">{{ $evidencia->nombre_archivo }}</a>
+                                @else
+                                    {{ $evidencia->nombre_archivo }}
+                                @endif
+                            </td>
                             <td class="py-2">{{ $evidencia->tipo_evidencia }}</td>
                             <td class="py-2">{{ $evidencia->descripcion ?? '—' }}</td>
                             <td class="py-2">{{ $evidencia->subidoPor->nombres ?? '—' }}</td>
@@ -106,18 +116,18 @@
                 <p class="text-gray-500 mb-4">Sin evidencias registradas.</p>
                 @endif
 
-                <form action="/tareas/{{ $tarea->id }}/evidencias" method="POST" class="border-t pt-4">
+                <form action="/tareas/{{ $tarea->id }}/evidencias" method="POST" enctype="multipart/form-data" class="border-t pt-4">
                     @csrf
                     <div class="grid grid-cols-4 gap-2">
-                        <input type="text" name="nombre_archivo" placeholder="Nombre archivo" required class="border rounded px-2 py-1 text-sm">
-                        <input type="text" name="url_archivo" placeholder="URL archivo" required class="border rounded px-2 py-1 text-sm">
+                        <input type="text" name="nombre_archivo" placeholder="Nombre archivo" class="border rounded px-2 py-1 text-sm">
+                        <input type="file" name="archivo" required class="border rounded px-2 py-1 text-sm">
                         <select name="tipo_evidencia" required class="border rounded px-2 py-1 text-sm">
                             <option value="imagen">Imagen</option>
                             <option value="documento">Documento</option>
                             <option value="captura">Captura</option>
                             <option value="otro">Otro</option>
                         </select>
-                        <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Agregar</button>
+                        <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Subir</button>
                     </div>
                     <input type="text" name="descripcion" placeholder="Descripción (opcional)" class="w-full border rounded px-2 py-1 text-sm mt-2">
                 </form>
