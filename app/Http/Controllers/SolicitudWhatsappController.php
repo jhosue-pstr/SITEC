@@ -17,6 +17,8 @@ class SolicitudWhatsappController extends Controller
 
     public function store(Request $request, ChatbotService $chatbot)
     {
+        \Log::debug('WhatsApp webhook received', $request->all());
+
         // --- WhatsApp Cloud API verification ---
         if ($request->has('hub_challenge')) {
             return response($request->hub_challenge);
@@ -51,16 +53,61 @@ class SolicitudWhatsappController extends Controller
             return response()->json(['status' => 'ok']);
         }
 
-        // --- Green API webhook payload ---
+        // --- Green API webhook payload (v3: sin wrapper 'body') ---
+        $typeWebhook = $request->input('typeWebhook');
+
+        // Solo procesamos mensajes entrantes de texto
+        if ($typeWebhook === 'incomingMessageReceived') {
+            $messageData = $request->input('messageData', []);
+            $senderData = $request->input('senderData', []);
+
+            if (! in_array($messageData['typeMessage'] ?? '', ['textMessage', 'extendedTextMessage'])) {
+                return response()->json(['status' => 'ignored']);
+            }
+
+            $textMessage = match ($messageData['typeMessage']) {
+                'extendedTextMessage' => $messageData['extendedTextMessageData']['text'] ?? '',
+                default => $messageData['textMessageData']['textMessage'] ?? '',
+            };
+            $chatId = $senderData['chatId'] ?? '';
+            $senderName = $senderData['senderName'] ?? '';
+            $numero = str_replace('@c.us', '', $chatId);
+
+            if (! $numero) {
+                return response()->json(['status' => 'ignored']);
+            }
+
+            SolicitudWhatsapp::create([
+                'numero_whatsapp' => $numero,
+                'mensaje_original' => $textMessage,
+                'estado_conversacion' => 'recibido',
+            ]);
+
+            $chatbot->handle($numero, $textMessage, $senderName);
+
+            return response()->json(['status' => 'ok']);
+        }
+
+        // --- Green API v2 (con wrapper 'body') ---
         $body = $request->input('body');
         if ($body) {
             $messageData = $body['messageData'] ?? [];
             $senderData = $body['senderData'] ?? [];
-            $textMessage = $messageData['textMessageData']['textMessage'] ?? '';
+            if (! in_array($messageData['typeMessage'] ?? '', ['textMessage', 'extendedTextMessage'])) {
+                return response()->json(['status' => 'ignored']);
+            }
+
+            $textMessage = match ($messageData['typeMessage']) {
+                'extendedTextMessage' => $messageData['extendedTextMessageData']['text'] ?? '',
+                default => $messageData['textMessageData']['textMessage'] ?? '',
+            };
             $chatId = $senderData['chatId'] ?? '';
             $senderName = $senderData['senderName'] ?? '';
-
             $numero = str_replace('@c.us', '', $chatId);
+
+            if (! $numero) {
+                return response()->json(['status' => 'ignored']);
+            }
 
             SolicitudWhatsapp::create([
                 'numero_whatsapp' => $numero,
@@ -75,10 +122,6 @@ class SolicitudWhatsappController extends Controller
             return response()->json(['status' => 'ok']);
         }
 
-        // Fallback: direct POST
-        $data = $request->all();
-        SolicitudWhatsapp::create($data);
-
-        return response()->json(['status' => 'ok']);
+        return response()->json(['status' => 'ignored']);
     }
 }

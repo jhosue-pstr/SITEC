@@ -39,13 +39,14 @@ class ChatbotService
 
     protected function estadoInicio(ConversacionChatbot $conv, string $texto, ?string $nombreRemitente): void
     {
-        if (in_array($texto, ['1', 'hola', 'solicitud', 'nueva solicitud', 'quiero hacer una solicitud', 'si', 'sí'])) {
+        if (in_array($texto, ['1', 'solicitud', 'nueva solicitud', 'quiero hacer una solicitud'])) {
             $conv->update(['estado' => 'esperando_nombre', 'datos_temp' => []]);
-            $this->responder($conv->numero_whatsapp, 'Por favor, escribí tu *nombre completo*:');
+            $this->responder($conv->numero_whatsapp, '✍️ Por favor, escribí tu *nombre completo*:');
         } else {
-            $saludo = $nombreRemitente ? "Hola *{$nombreRemitente}*! 👋\n\n" : "Hola! 👋\n\n";
+            $saludo = $nombreRemitente ? "¡Hola de nuevo *{$nombreRemitente}*! 👋\n\n" : "¡Hola! 👋\n\n";
             $this->responder($conv->numero_whatsapp,
-                "{$saludo}Soy el asistente virtual de soporte técnico.\n\n".
+                "{$saludo}Te has comunicado con *Mesa de Ayuda - OGTI* 🤖\n".
+                "Sistema de Gestión de Soporte Técnico.\n\n".
                 "📋 *Opciones:*\n".
                 "1️⃣ Hacer una nueva solicitud de soporte\n\n".
                 "Respondé *1* o *'Nueva solicitud'* para comenzar."
@@ -57,9 +58,28 @@ class ChatbotService
     {
         $datos = $conv->datos_temp;
         $datos['nombres'] = $nombre;
-        $conv->update(['estado' => 'esperando_oficina', 'datos_temp' => $datos]);
 
-        $this->responder($conv->numero_whatsapp, "Gracias *{$nombre}*.\n\n¿En qué *oficina* trabajás? (ej: Secretaría General, Alcaldía, RRHH)");
+        $usuarioExistente = Usuario::where('telefono', $conv->numero_whatsapp)->first();
+
+        if ($usuarioExistente?->oficina_id) {
+            $oficina = Oficina::find($usuarioExistente->oficina_id);
+            $datos['oficina'] = $oficina?->nombre ?? '—';
+            $datos['oficina_id'] = $oficina?->id;
+            $conv->update(['estado' => 'esperando_descripcion', 'datos_temp' => $datos]);
+            $this->responder($conv->numero_whatsapp,
+                "Gracias *{$nombre}* 🙌\n\n".
+                "Veo que eres de la oficina de *{$datos['oficina']}*.\n\n".
+                "Ahora describí el *problema técnico* que tenés:\n".
+                '¿qué equipo es, qué pasa, desde cuándo?'
+            );
+        } else {
+            $conv->update(['estado' => 'esperando_oficina', 'datos_temp' => $datos]);
+            $this->responder($conv->numero_whatsapp,
+                "Gracias *{$nombre}* 🙌\n\n".
+                "¿En qué *oficina* trabajás?\n".
+                '(ej: Alcaldía, Secretaría General, RRHH, Tesorería, Imagen)'
+            );
+        }
     }
 
     protected function esperandoOficina(ConversacionChatbot $conv, string $oficina): void
@@ -72,7 +92,11 @@ class ChatbotService
         $datos['oficina_id'] = $oficinaDb?->id;
         $conv->update(['estado' => 'esperando_descripcion', 'datos_temp' => $datos]);
 
-        $this->responder($conv->numero_whatsapp, "Anotado: *{$oficinaNombre}*.\n\nAhora describí el *problema técnico* que tenés (qué equipo, qué pasa, desde cuándo):");
+        $this->responder($conv->numero_whatsapp,
+            "Anotado: *{$oficinaNombre}* ✅\n\n".
+            "Ahora describí el *problema técnico* que tenés:\n".
+            '¿qué equipo es, qué pasa, desde cuándo?'
+        );
     }
 
     protected function esperandoDescripcion(ConversacionChatbot $conv, string $descripcion): void
@@ -116,22 +140,34 @@ class ChatbotService
         $datos = $conv->datos_temp;
         $numero = $conv->numero_whatsapp;
 
+        $telefono = $datos['telefono'] ?? $numero;
+
         $usuario = Usuario::firstOrCreate(
-            ['telefono' => $datos['telefono'] ?? $numero],
+            ['telefono' => $telefono],
             [
                 'nombres' => explode(' ', $datos['nombres'])[0] ?? $datos['nombres'],
                 'apellidos' => count(explode(' ', $datos['nombres'])) > 1
                     ? implode(' ', array_slice(explode(' ', $datos['nombres']), 1))
                     : '—',
-                'correo' => 'whatsapp_'.str_replace(['@', '.', '-'], '_', $numero).'@sitec.local',
+                'correo' => 'whatsapp_'.str_replace(['@', '.', '-'], '_', $telefono).'@sitec.local',
                 'rol' => 'solicitante',
                 'activo' => true,
                 'password' => bcrypt('changeme'),
             ]
         );
 
-        $lastTask = Tarea::latest('id')->first();
-        $nextNumber = $lastTask ? (int) substr($lastTask->codigo, 2) + 1 : 1;
+        if ($usuario->wasRecentlyCreated && ! empty($datos['oficina_id'])) {
+            $usuario->update(['oficina_id' => $datos['oficina_id']]);
+        } elseif (! $usuario->oficina_id && ! empty($datos['oficina_id'])) {
+            $usuario->update(['oficina_id' => $datos['oficina_id']]);
+        }
+
+        $maxCode = Tarea::where('codigo', 'like', 'T-%')->max('codigo');
+        if ($maxCode && preg_match('/^T-(\d+)$/', $maxCode, $m)) {
+            $nextNumber = (int) $m[1] + 1;
+        } else {
+            $nextNumber = Tarea::where('codigo', 'like', 'T-%')->count() + 1;
+        }
         $codigo = 'T-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         $tarea = Tarea::create([
