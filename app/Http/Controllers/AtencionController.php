@@ -17,12 +17,17 @@ class AtencionController extends Controller
 
     public function store(Request $request, Tarea $tarea)
     {
-        $data = $request->all();
-        $data['tarea_id'] = $tarea->id;
-        $data['practicante_id'] = auth()->id();
-        Atencion::create($data);
+        $validated = $request->validate([
+            'diagnostico' => 'required|string',
+            'actividades_realizadas' => 'nullable|string',
+            'solucion_aplicada' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'tiempo_atencion_minutos' => 'nullable|integer|min:0',
+        ]);
 
-        $tarea->update(['estado' => 'finalizado', 'fecha_finalizacion' => now()]);
+        $validated['tarea_id'] = $tarea->id;
+        $validated['practicante_id'] = auth()->id();
+        Atencion::create($validated);
 
         Notificacion::create([
             'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
@@ -31,7 +36,7 @@ class AtencionController extends Controller
             'mensaje' => "Se registró la atención para la tarea {$tarea->codigo}",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Atención registrada correctamente');
     }
 
     public function edit(Atencion $atencion)
@@ -41,8 +46,16 @@ class AtencionController extends Controller
 
     public function update(Request $request, Atencion $atencion)
     {
-        $atencion->update($request->all());
+        $validated = $request->validate([
+            'diagnostico' => 'required|string',
+            'actividades_realizadas' => 'nullable|string',
+            'solucion_aplicada' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'tiempo_atencion_minutos' => 'nullable|integer|min:0',
+        ]);
 
-        return redirect("/tareas/{$atencion->tarea_id}");
+        $atencion->update($validated);
+
+        return redirect("/tareas/{$atencion->tarea_id}")->with('toast_success', 'Atención actualizada correctamente');
     }
 }

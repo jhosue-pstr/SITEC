@@ -10,7 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <a href="/usuarios/create" class="bg-blue-500 text-white px-4 py-2 rounded mb-4 inline-block">Nuevo Usuario</a>
 
-                <table class="w-full mt-4">
+                <table class="w-full mt-4" x-data>
                     <thead>
                         <tr class="border-b">
                             <th class="text-left py-2">Nombres</th>
@@ -31,11 +31,7 @@
                             <td class="py-2">{{ $usuario->activo ? 'Sí' : 'No' }}</td>
                             <td class="py-2">
                                 <a href="/usuarios/{{ $usuario->id }}/edit" class="text-blue-600">Editar</a>
-                                <form action="/usuarios/{{ $usuario->id }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 ml-2">Eliminar</button>
-                                </form>
+                                <button type="button" @click="$dispatch('show-confirm', { title: 'Eliminar usuario', message: '¿Estás seguro de eliminar este usuario?', confirmText: 'Eliminar', confirmColor: 'bg-red-600 hover:bg-red-700', formAction: '/usuarios/{{ $usuario->id }}', formMethod: 'DELETE' })" class="text-red-600 ml-2">Eliminar</button>
                             </td>
                         </tr>
                         @endforeach

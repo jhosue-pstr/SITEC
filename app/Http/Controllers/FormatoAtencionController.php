@@ -18,9 +18,27 @@ class FormatoAtencionController extends Controller
 
     public function create(Tarea $tarea)
     {
+        $tarea->load(['solicitante', 'atencion', 'practicanteAsignado']);
         $equipos = Equipo::all();
 
-        return view('formatos-atencion.create', compact('tarea', 'equipos'));
+        $defaults = [
+            'nombres_solicitante' => $tarea->solicitante->nombres ?? '',
+            'apellidos_solicitante' => $tarea->solicitante->apellidos ?? '',
+            'telefono_movil' => $tarea->solicitante->telefono ?? '',
+            'tipo_soporte_informatico' => $tarea->tipo_soporte ?? '',
+            'reporte_usuario' => $tarea->descripcion ?? '',
+            'diagnostico_tecnico' => $tarea->atencion->diagnostico ?? '',
+            'observaciones' => $tarea->atencion->observaciones ?? '',
+            'fecha_atencion' => $tarea->atencion->fecha_atencion?->format('Y-m-d') ?? '',
+            'hora_atencion' => $tarea->atencion->fecha_atencion?->format('H:i') ?? '',
+            'fecha_entrega' => $tarea->fecha_finalizacion?->format('Y-m-d') ?? now()->format('Y-m-d'),
+            'hora_entrega' => now()->format('H:i'),
+            'nombre_responsable' => $tarea->practicanteAsignado
+                ? trim($tarea->practicanteAsignado->nombres.' '.$tarea->practicanteAsignado->apellidos)
+                : '',
+        ];
+
+        return view('formatos-atencion.create', compact('tarea', 'equipos', 'defaults'));
     }
 
     public function store(Request $request, Tarea $tarea)
@@ -30,7 +48,7 @@ class FormatoAtencionController extends Controller
         $data['responsable_atencion_id'] = auth()->id();
         FormatoAtencion::create($data);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Formato de atención registrado');
     }
 
     public function show(FormatoAtencion $formatoAtencion)
@@ -51,13 +69,13 @@ class FormatoAtencionController extends Controller
     {
         $formatoAtencion->update($request->all());
 
-        return redirect('/formatos-atencion');
+        return redirect('/formatos-atencion')->with('toast_success', 'Formato actualizado');
     }
 
     public function destroy(FormatoAtencion $formatoAtencion)
     {
         $formatoAtencion->delete();
 
-        return redirect('/formatos-atencion');
+        return redirect('/formatos-atencion')->with('toast_success', 'Formato eliminado');
     }
 }

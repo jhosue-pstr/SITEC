@@ -153,7 +153,7 @@ $estadoLabel = match($tarea->estado) {
             <textarea form="edit-form" name="descripcion" required class="edit-field hidden mt-1 w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3">{{ $tarea->descripcion }}</textarea>
         </div>
 
-        <div class="mt-6 pt-5 border-t border-gray-100 flex flex-wrap gap-2 items-center">
+        <div class="mt-6 pt-5 border-t border-gray-100 flex flex-wrap gap-2 items-center" x-data>
             @if(in_array(auth()->user()->rol, ['jefe', 'practicante']))
             <button type="button" id="btn-edit" onclick="toggleEdit()" class="view-action inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -179,21 +179,11 @@ $estadoLabel = match($tarea->estado) {
             </form>
             @endif
 
-            @if(in_array($tarea->estado, ['en_proceso']) && auth()->user()->rol === 'practicante')
-            <a href="/tareas/{{ $tarea->id }}/atenciones/create" class="view-action inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-green-300 rounded-lg text-sm font-medium text-green-600 hover:bg-green-50 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                Finalizar
-            </a>
-            @endif
-
             @if(in_array($tarea->estado, ['pendiente', 'asignado', 'en_proceso']) && auth()->user()->rol === 'jefe')
-            <form action="/tareas/{{ $tarea->id }}/cancelar" method="POST" class="inline view-action" onsubmit="return confirm('¿Cancelar tarea?')">
-                @csrf
-                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-red-300 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                <button type="button" @click="$dispatch('show-confirm', { title: 'Cancelar tarea', message: '¿Estás seguro de cancelar esta tarea?', confirmText: 'Cancelar', confirmColor: 'bg-red-600 hover:bg-red-700', formAction: '/tareas/{{ $tarea->id }}/cancelar', formMethod: 'POST' })" class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-red-300 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     Cancelar
                 </button>
-            </form>
             @endif
         </div>
     </div>

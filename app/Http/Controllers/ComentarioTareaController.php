@@ -16,6 +16,6 @@ class ComentarioTareaController extends Controller
             'comentario' => $request->comentario,
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Comentario agregado');
     }
 }

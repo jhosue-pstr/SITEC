@@ -10,7 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <a href="/tareas/create" class="bg-blue-500 text-white px-4 py-2 rounded mb-4 inline-block">Nueva Tarea</a>
 
-                <table class="w-full mt-4">
+                <table class="w-full mt-4" x-data>
                     <thead>
                         <tr class="border-b">
                             <th class="text-left py-2">Código</th>
@@ -39,11 +39,7 @@
                                 <a href="/tareas/{{ $tarea->id }}" class="text-green-600">Ver</a>
                                 @if(auth()->user()->rol === 'jefe')
                                 <a href="/tareas/{{ $tarea->id }}/edit" class="text-blue-600 ml-2">Editar</a>
-                                <form action="/tareas/{{ $tarea->id }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 ml-2">Eliminar</button>
-                                </form>
+                                <button type="button" @click="$dispatch('show-confirm', { title: 'Eliminar tarea', message: '¿Estás seguro de eliminar esta tarea?', confirmText: 'Eliminar', confirmColor: 'bg-red-600 hover:bg-red-700', formAction: '/tareas/{{ $tarea->id }}', formMethod: 'DELETE' })" class="text-red-600 ml-2">Eliminar</button>
                                 @endif
                             </td>
                         </tr>

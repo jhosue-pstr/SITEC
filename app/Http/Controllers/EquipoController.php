@@ -28,7 +28,7 @@ class EquipoController extends Controller
     {
         Equipo::create($request->all());
 
-        return redirect('/equipos');
+        return redirect('/equipos')->with('toast_success', 'Equipo registrado');
     }
 
     public function edit(Equipo $equipo)
@@ -43,13 +43,13 @@ class EquipoController extends Controller
     {
         $equipo->update($request->all());
 
-        return redirect('/equipos');
+        return redirect('/equipos')->with('toast_success', 'Equipo actualizado');
     }
 
     public function destroy(Equipo $equipo)
     {
         $equipo->delete();
 
-        return redirect('/equipos');
+        return redirect('/equipos')->with('toast_success', 'Equipo eliminado');
     }
 }

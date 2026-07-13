@@ -26,7 +26,7 @@ class UsuarioController extends Controller
         $data['password'] = Hash::make($data['password']);
         Usuario::create($data);
 
-        return redirect('/usuarios');
+        return redirect('/usuarios')->with('toast_success', 'Usuario creado');
     }
 
     public function edit(Usuario $usuario)
@@ -42,13 +42,13 @@ class UsuarioController extends Controller
         }
         $usuario->update($data);
 
-        return redirect('/usuarios');
+        return redirect('/usuarios')->with('toast_success', 'Usuario actualizado');
     }
 
     public function destroy(Usuario $usuario)
     {
         $usuario->delete();
 
-        return redirect('/usuarios');
+        return redirect('/usuarios')->with('toast_success', 'Usuario eliminado');
     }
 }

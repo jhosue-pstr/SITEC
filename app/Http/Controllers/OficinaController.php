@@ -23,7 +23,7 @@ class OficinaController extends Controller
     {
         Oficina::create($request->all());
 
-        return redirect('/oficinas');
+        return redirect('/oficinas')->with('toast_success', 'Oficina creada');
     }
 
     public function edit(Oficina $oficina)
@@ -35,13 +35,13 @@ class OficinaController extends Controller
     {
         $oficina->update($request->all());
 
-        return redirect('/oficinas');
+        return redirect('/oficinas')->with('toast_success', 'Oficina actualizada');
     }
 
     public function destroy(Oficina $oficina)
     {
         $oficina->delete();
 
-        return redirect('/oficinas');
+        return redirect('/oficinas')->with('toast_success', 'Oficina eliminada');
     }
 }

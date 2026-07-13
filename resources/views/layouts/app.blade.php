@@ -27,5 +27,21 @@
                 </main>
             </div>
         </div>
+
+        <x-toast />
+        <x-confirm-dialog />
+
+        @if(session('toast_success'))
+            <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'success', message: '{{ session('toast_success') }}' } })))</script>
+        @endif
+        @if(session('toast_error'))
+            <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', message: '{{ session('toast_error') }}' } })))</script>
+        @endif
+        @if(session('toast_warning'))
+            <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'warning', message: '{{ session('toast_warning') }}' } })))</script>
+        @endif
+        @if($errors->any())
+            <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', message: '{{ $errors->first() }}' } })))</script>
+        @endif
     </body>
 </html>

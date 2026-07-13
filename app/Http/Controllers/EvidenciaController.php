@@ -23,7 +23,7 @@ class EvidenciaController extends Controller
 
         Evidencia::create($data);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Evidencia subida correctamente');
     }
 
     public function destroy(Evidencia $evidencia)
@@ -35,6 +35,6 @@ class EvidenciaController extends Controller
         $tarea_id = $evidencia->tarea_id;
         $evidencia->delete();
 
-        return redirect("/tareas/{$tarea_id}");
+        return redirect("/tareas/{$tarea_id}")->with('toast_success', 'Evidencia eliminada');
     }
 }

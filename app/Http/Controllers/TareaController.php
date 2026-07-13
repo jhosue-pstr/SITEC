@@ -54,7 +54,7 @@ class TareaController extends Controller
             'mensaje' => "Se creó la solicitud {$tarea->codigo}: {$tarea->titulo}",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea creada correctamente');
     }
 
     public function show(Tarea $tarea)
@@ -81,14 +81,14 @@ class TareaController extends Controller
     {
         $tarea->update($request->all());
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea actualizada correctamente');
     }
 
     public function destroy(Tarea $tarea)
     {
         $tarea->delete();
 
-        return redirect('/tareas');
+        return redirect('/tareas')->with('toast_success', 'Tarea eliminada correctamente');
     }
 
     public function asignar(Request $request, Tarea $tarea)
@@ -96,7 +96,7 @@ class TareaController extends Controller
         $ids = $request->input('practicante_ids', []);
 
         if (empty($ids)) {
-            return back()->withErrors(['Selecciona al menos un técnico']);
+            return back()->with('toast_error', 'Selecciona al menos un técnico');
         }
 
         AsignacionTarea::where('tarea_id', $tarea->id)->where('activa', true)
@@ -128,7 +128,7 @@ class TareaController extends Controller
             ]);
         }
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea asignada correctamente');
     }
 
     public function aceptar(Request $request, Tarea $tarea)
@@ -145,7 +145,7 @@ class TareaController extends Controller
             'mensaje' => "La tarea {$tarea->codigo} fue aceptada y está en proceso",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea en proceso');
     }
 
     public function iniciar(Request $request, Tarea $tarea)
@@ -180,7 +180,7 @@ class TareaController extends Controller
             'mensaje' => auth()->user()->nombres." tomó la tarea {$tarea->codigo}",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea auto-asignada');
     }
 
     public function finalizar(Request $request, Tarea $tarea)
@@ -197,7 +197,7 @@ class TareaController extends Controller
             'mensaje' => "La tarea {$tarea->codigo} ha sido finalizada",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}/formatos-atencion/create")->with('toast_success', 'Tarea finalizada. Completa el formato de atención.');
     }
 
     public function observar(Request $request, Tarea $tarea)
@@ -211,7 +211,7 @@ class TareaController extends Controller
             'mensaje' => "La tarea {$tarea->codigo} fue marcada como observada",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea marcada como observada');
     }
 
     public function cancelar(Request $request, Tarea $tarea)
@@ -225,6 +225,6 @@ class TareaController extends Controller
             'mensaje' => "La tarea {$tarea->codigo} ha sido cancelada",
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea cancelada');
     }
 }

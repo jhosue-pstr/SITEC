@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <table class="w-full mt-4">
+                <table class="w-full mt-4" x-data>
                     <thead>
                         <tr class="border-b">
                             <th class="text-left py-2">Tarea</th>
@@ -30,11 +30,7 @@
                             <td class="py-2">
                                 <a href="/formatos-atencion/{{ $formato->id }}" class="text-blue-600">Ver</a>
                                 <a href="/formatos-atencion/{{ $formato->id }}/edit" class="text-blue-600 ml-2">Editar</a>
-                                <form action="/formatos-atencion/{{ $formato->id }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 ml-2">Eliminar</button>
-                                </form>
+                                <button type="button" @click="$dispatch('show-confirm', { title: 'Eliminar formato', message: '¿Estás seguro de eliminar este formato de atención?', confirmText: 'Eliminar', confirmColor: 'bg-red-600 hover:bg-red-700', formAction: '/formatos-atencion/{{ $formato->id }}', formMethod: 'DELETE' })" class="text-red-600 ml-2">Eliminar</button>
                             </td>
                         </tr>
                         @endforeach

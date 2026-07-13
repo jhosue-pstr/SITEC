@@ -23,7 +23,7 @@ class AsignacionTareaController extends Controller
             'fecha_asignacion' => now(),
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Asignación registrada');
     }
 
     public function destroy(AsignacionTarea $asignacionTarea)
@@ -37,6 +37,6 @@ class AsignacionTareaController extends Controller
             'fecha_asignacion' => null,
         ]);
 
-        return redirect("/tareas/{$tarea->id}");
+        return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Asignación removida');
     }
 }
