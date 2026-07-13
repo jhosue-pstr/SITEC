@@ -30,7 +30,7 @@ Route::middleware(['auth', 'rol:jefe'])->group(function () {
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('equipos', EquipoController::class);
     Route::resource('oficinas', OficinaController::class);
-    Route::resource('formatos-atencion', FormatoAtencionController::class)->except(['create', 'store']);
+    Route::resource('formatos-atencion', FormatoAtencionController::class)->except(['create', 'store', 'show', 'index']);
 
     Route::post('/tareas/{tarea}/asignar', [TareaController::class, 'asignar'])->name('tareas.asignar');
     Route::post('/tareas/{tarea}/observar', [TareaController::class, 'observar'])->name('tareas.observar');
