@@ -74,7 +74,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-gray-700">Practicante Asignado</label>
+                        <label class="block text-gray-700">Técnico Asignado</label>
                         <select name="practicante_asignado_id" class="w-full border rounded px-3 py-2 mt-1">
                             <option value="">Seleccionar...</option>
                             @foreach($practicantes as $usuario)

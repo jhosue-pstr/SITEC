@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AsignacionTarea;
 use App\Models\Notificacion;
 use App\Models\Oficina;
 use App\Models\Tarea;
@@ -60,7 +61,11 @@ class TareaController extends Controller
     {
         $tarea->load(['solicitante', 'oficina', 'practicanteAsignado', 'atencion', 'evidencias.subidoPor', 'comentarios.usuario', 'asignaciones.practicante', 'notificaciones']);
 
-        return view('tareas.show', compact('tarea'));
+        $oficinas = Oficina::all();
+        $solicitantes = Usuario::whereIn('rol', ['solicitante', 'jefe'])->get();
+        $practicantes = Usuario::where('rol', 'practicante')->get();
+
+        return view('tareas.show', compact('tarea', 'oficinas', 'solicitantes', 'practicantes'));
     }
 
     public function edit(Tarea $tarea)
@@ -76,7 +81,7 @@ class TareaController extends Controller
     {
         $tarea->update($request->all());
 
-        return redirect('/tareas');
+        return redirect("/tareas/{$tarea->id}");
     }
 
     public function destroy(Tarea $tarea)
@@ -88,18 +93,40 @@ class TareaController extends Controller
 
     public function asignar(Request $request, Tarea $tarea)
     {
+        $ids = $request->input('practicante_ids', []);
+
+        if (empty($ids)) {
+            return back()->withErrors(['Selecciona al menos un técnico']);
+        }
+
+        AsignacionTarea::where('tarea_id', $tarea->id)->where('activa', true)
+            ->update(['activa' => false, 'fecha_fin_asignacion' => now()]);
+
+        foreach ($ids as $practicanteId) {
+            AsignacionTarea::create([
+                'tarea_id' => $tarea->id,
+                'practicante_id' => $practicanteId,
+                'tipo_asignacion' => 'manual',
+                'asignado_por_id' => auth()->id(),
+                'activa' => true,
+                'fecha_asignacion' => now(),
+            ]);
+        }
+
         $tarea->update([
-            'practicante_asignado_id' => $request->practicante_id,
+            'practicante_asignado_id' => $ids[0],
             'estado' => 'asignado',
             'fecha_asignacion' => now(),
         ]);
 
-        Notificacion::create([
-            'usuario_id' => $request->practicante_id,
-            'tarea_id' => $tarea->id,
-            'titulo' => 'Tarea asignada',
-            'mensaje' => "Se te ha asignado la tarea {$tarea->codigo}: {$tarea->titulo}",
-        ]);
+        foreach ($ids as $practicanteId) {
+            Notificacion::create([
+                'usuario_id' => $practicanteId,
+                'tarea_id' => $tarea->id,
+                'titulo' => 'Tarea asignada',
+                'mensaje' => "Se te ha asignado la tarea {$tarea->codigo}: {$tarea->titulo}",
+            ]);
+        }
 
         return redirect("/tareas/{$tarea->id}");
     }
@@ -137,11 +164,20 @@ class TareaController extends Controller
             'fecha_inicio' => now(),
         ]);
 
+        AsignacionTarea::create([
+            'tarea_id' => $tarea->id,
+            'practicante_id' => auth()->id(),
+            'tipo_asignacion' => 'auto',
+            'asignado_por_id' => auth()->id(),
+            'activa' => true,
+            'fecha_asignacion' => now(),
+        ]);
+
         Notificacion::create([
             'usuario_id' => Usuario::where('rol', 'jefe')->first()?->id,
             'tarea_id' => $tarea->id,
             'titulo' => 'Tarea auto-asignada',
-            'mensaje' => 'El practicante '.auth()->user()->nombres." tomó la tarea {$tarea->codigo}",
+            'mensaje' => auth()->user()->nombres." tomó la tarea {$tarea->codigo}",
         ]);
 
         return redirect("/tareas/{$tarea->id}");

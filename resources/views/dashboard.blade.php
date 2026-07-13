@@ -43,7 +43,7 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Tablero de solicitudes</h2>
-                <p class="text-sm text-gray-500">Control de tareas, practicantes y evidencias de soporte técnico.</p>
+                <p class="text-sm text-gray-500">Control de tareas, técnicos y evidencias de soporte técnico.</p>
             </div>
             <a href="/tareas/create" class="bg-green-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-800">+ Nueva solicitud</a>
         </div>
@@ -86,9 +86,9 @@
             <div class="stat"><b>{{ $countEnProceso }}</b><span>En proceso</span></div>
             <div class="stat"><b>{{ $countFinalizadasMes }}</b><span>Finalizadas (este mes)</span></div>
             @if($countPracticantesActivos !== null)
-            <div class="stat"><b>{{ $countPracticantesActivos }}</b><span>Practicantes activos</span></div>
+            <div class="stat"><b>{{ $countPracticantesActivos }}</b><span>Técnicos activos</span></div>
             @else
-            <div class="stat"><b>—</b><span>Practicantes activos</span></div>
+            <div class="stat"><b>—</b><span>Técnicos activos</span></div>
             @endif
         </section>
 

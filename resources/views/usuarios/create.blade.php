@@ -36,7 +36,7 @@
                         <select name="rol" required class="w-full border rounded px-3 py-2 mt-1">
                             <option value="">Seleccionar...</option>
                             <option value="jefe">Jefe</option>
-                            <option value="practicante">Practicante</option>
+                            <option value="practicante">Técnico</option>
                             <option value="solicitante">Solicitante</option>
                         </select>
                     </div>

@@ -20,7 +20,7 @@
                             <th class="text-left py-2">Estado</th>
                             <th class="text-left py-2">Solicitante</th>
                             <th class="text-left py-2">Oficina</th>
-                            <th class="text-left py-2">Practicante</th>
+                             <th class="text-left py-2">Técnico</th>
                             <th class="text-left py-2">Acciones</th>
                         </tr>
                     </thead>

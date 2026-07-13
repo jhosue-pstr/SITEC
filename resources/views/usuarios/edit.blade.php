@@ -36,7 +36,7 @@
                         <label class="block text-gray-700">Rol</label>
                         <select name="rol" required class="w-full border rounded px-3 py-2 mt-1">
                             <option value="jefe" @selected($usuario->rol == 'jefe')>Jefe</option>
-                            <option value="practicante" @selected($usuario->rol == 'practicante')>Practicante</option>
+                            <option value="practicante" @selected($usuario->rol == 'practicante')>Técnico</option>
                             <option value="solicitante" @selected($usuario->rol == 'solicitante')>Solicitante</option>
                         </select>
                     </div>
