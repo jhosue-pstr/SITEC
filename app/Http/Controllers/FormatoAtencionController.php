@@ -18,6 +18,11 @@ class FormatoAtencionController extends Controller
 
     public function create(Tarea $tarea)
     {
+        if ($tarea->formatoAtencion) {
+            return redirect("/formatos-atencion/{$tarea->formatoAtencion->id}")
+                ->with('toast_warning', 'Esta tarea ya tiene un formato de atención registrado.');
+        }
+
         $tarea->load(['solicitante', 'atencion', 'practicanteAsignado']);
         $equipos = Equipo::all();
 
@@ -43,6 +48,11 @@ class FormatoAtencionController extends Controller
 
     public function store(Request $request, Tarea $tarea)
     {
+        if ($tarea->formatoAtencion) {
+            return redirect("/formatos-atencion/{$tarea->formatoAtencion->id}")
+                ->with('toast_error', 'Ya existe un formato de atención para esta tarea.');
+        }
+
         $data = $request->all();
         $data['tarea_id'] = $tarea->id;
         $data['responsable_atencion_id'] = auth()->id();

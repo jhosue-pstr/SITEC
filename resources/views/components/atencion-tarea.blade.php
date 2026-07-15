@@ -41,6 +41,10 @@ ha@props(['tarea'])
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Observaciones</label>
                     <p class="mt-1 text-sm text-gray-700">{{ $tarea->atencion->observaciones ?? '—' }}</p>
                 </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Firma (Practicante)</label>
+                    <p class="mt-1 text-sm text-gray-700">{{ trim(($tarea->atencion->practicante->nombres ?? '').' '.($tarea->atencion->practicante->apellidos ?? '')) ?: '—' }}</p>
+                </div>
             </div>
         </div>
 
@@ -70,6 +74,10 @@ ha@props(['tarea'])
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Observaciones</label>
                         <textarea name="observaciones" rows="2" class="mt-1 w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ $tarea->atencion->observaciones }}</textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Firma (Practicante)</label>
+                        <p class="mt-1 text-sm text-gray-700 bg-gray-100 border border-gray-200 rounded-lg px-4 py-3">{{ trim(($tarea->atencion->practicante->nombres ?? '').' '.($tarea->atencion->practicante->apellidos ?? '')) ?: '—' }}</p>
                     </div>
                 </div>
 

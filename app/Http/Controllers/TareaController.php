@@ -197,6 +197,11 @@ class TareaController extends Controller
             'mensaje' => "La tarea {$tarea->codigo} ha sido finalizada",
         ]);
 
+        if ($tarea->formatoAtencion) {
+            return redirect("/formatos-atencion/{$tarea->formatoAtencion->id}")
+                ->with('toast_warning', 'Esta tarea ya tiene un formato de atención registrado.');
+        }
+
         return redirect("/tareas/{$tarea->id}/formatos-atencion/create")->with('toast_success', 'Tarea finalizada. Completa el formato de atención.');
     }
 

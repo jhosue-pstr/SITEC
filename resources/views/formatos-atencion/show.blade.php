@@ -12,7 +12,7 @@
                     <h3 class="text-lg font-semibold">Datos del Formato</h3>
                     @if(auth()->user()->rol === 'jefe')
                     <div class="flex items-center gap-2">
-                        <button type="button" x-show="!editing" @click="editing = true; $nextTick(() => window.fmtResizeAll && window.fmtResizeAll())" class="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium">
+                        <button type="button" x-show="!editing" @click="editing = true" class="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             Editar
                         </button>
@@ -70,6 +70,26 @@
                     <dl class="grid grid-cols-2 gap-4 mb-6">
                         <div><dt class="text-gray-500">Nombre</dt><dd>{{ $formatoAtencion->nombre_responsable ?? $formatoAtencion->responsable->nombres ?? '—' }}</dd></div>
                     </dl>
+
+                    <h4 class="font-semibold mb-2 text-gray-700">Firmas</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Firma del Responsable (Técnico)</p>
+                            @if($formatoAtencion->firma_responsable_url)
+                                <img src="{{ asset('storage/'.$formatoAtencion->firma_responsable_url) }}" alt="Firma del Responsable" class="border border-gray-300 rounded bg-gray-50 w-full h-40 object-contain">
+                            @else
+                                <p class="text-sm text-gray-400 border border-dashed border-gray-300 rounded h-40 flex items-center justify-center">Sin firma</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">Firma del Solicitante</p>
+                            @if($formatoAtencion->firma_solicitante_url)
+                                <img src="{{ asset('storage/'.$formatoAtencion->firma_solicitante_url) }}" alt="Firma del Solicitante" class="border border-gray-300 rounded bg-gray-50 w-full h-40 object-contain">
+                            @else
+                                <p class="text-sm text-gray-400 border border-dashed border-gray-300 rounded h-40 flex items-center justify-center">Sin firma</p>
+                            @endif
+                        </div>
+                    </div>
 
                     <div class="mt-4 space-x-2">
                         <a href="/tareas/{{ $formatoAtencion->tarea_id }}" class="text-blue-600">Ver Tarea</a>
