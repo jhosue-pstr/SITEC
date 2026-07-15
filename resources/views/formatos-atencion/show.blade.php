@@ -12,7 +12,7 @@
                     <h3 class="text-lg font-semibold">Datos del Formato</h3>
                     @if(auth()->user()->rol === 'jefe')
                     <div class="flex items-center gap-2">
-                        <button type="button" x-show="!editing" @click="editing = true" class="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium">
+                        <button type="button" x-show="!editing" @click="editing = true; $nextTick(() => window.fmtResizeAll && window.fmtResizeAll())" class="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             Editar
                         </button>
@@ -137,6 +137,23 @@
                         <div><label class="text-gray-500 text-sm">Hora Entrega</label><input type="time" name="hora_entrega" value="{{ old('hora_entrega', $formatoAtencion->hora_entrega) }}" class="mt-1 w-full border rounded px-3 py-2"></div>
                     </div>
 
+                    <h4 class="font-semibold mb-2 text-gray-700">Firmas</h4>
+                    <p class="text-sm text-gray-500 mb-2">Firme con el dedo en pantalla táctil o con el mouse en PC. Si ya existe una firma, se muestra; puede redibujarla.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Firma del Responsable (Técnico)</label>
+                            <canvas id="canvas-responsable" class="w-full h-40 border border-gray-300 rounded bg-gray-50 touch-none"></canvas>
+                            <button type="button" id="clear-responsable" class="mt-2 text-sm text-red-600">Limpiar</button>
+                            <input type="hidden" name="firma_responsable" id="firma_responsable">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Firma del Solicitante</label>
+                            <canvas id="canvas-solicitante" class="w-full h-40 border border-gray-300 rounded bg-gray-50 touch-none"></canvas>
+                            <button type="button" id="clear-solicitante" class="mt-2 text-sm text-red-600">Limpiar</button>
+                            <input type="hidden" name="firma_solicitante" id="firma_solicitante">
+                        </div>
+                    </div>
+
                     <div class="mt-4 flex items-center gap-3">
                         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Guardar</button>
                         <button type="button" @click="editing = false" class="text-gray-600 px-4 py-2 rounded border">Cancelar</button>
@@ -146,4 +163,48 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function fmtResize(id) {
+            const c = document.getElementById(id);
+            if (!c) return;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const r = c.getBoundingClientRect();
+            c.width = r.width * ratio;
+            c.height = r.height * ratio;
+            const ctx = c.getContext('2d');
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#111827';
+        }
+        function fmtInit(canvasId, inputId, clearId, existingUrl) {
+            const canvas = document.getElementById(canvasId);
+            const input = document.getElementById(inputId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let drawing = false, drawn = false;
+            fmtResize(canvasId);
+            window.addEventListener('resize', () => fmtResize(canvasId));
+            function point(e){ const r = canvas.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+            canvas.addEventListener('pointerdown', e => { drawing=true; drawn=true; const p=point(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+            canvas.addEventListener('pointermove', e => { if(!drawing) return; const p=point(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); });
+            const stop = e => { drawing=false; e.preventDefault(); };
+            canvas.addEventListener('pointerup', stop);
+            canvas.addEventListener('pointerleave', stop);
+            document.getElementById(clearId).addEventListener('click', () => { ctx.clearRect(0,0,canvas.width,canvas.height); input.value=''; drawn=false; });
+            canvas.closest('form').addEventListener('submit', () => { if(drawn) input.value = canvas.toDataURL('image/png'); });
+            if (existingUrl) {
+                const img = new Image();
+                img.onload = () => { fmtResize(canvasId); ctx.drawImage(img, 0, 0, canvas.getBoundingClientRect().width, canvas.getBoundingClientRect().height); };
+                img.src = existingUrl;
+            }
+        }
+        function fmtInitAll() {
+            fmtInit('canvas-responsable','firma_responsable','clear-responsable', @if($formatoAtencion->firma_responsable_url) '{{ asset('storage/'.$formatoAtencion->firma_responsable_url) }}' @else null @endif);
+            fmtInit('canvas-solicitante','firma_solicitante','clear-solicitante', @if($formatoAtencion->firma_solicitante_url) '{{ asset('storage/'.$formatoAtencion->firma_solicitante_url) }}' @else null @endif);
+        }
+        window.fmtResizeAll = function(){ fmtResize('canvas-responsable'); fmtResize('canvas-solicitante'); };
+        document.addEventListener('DOMContentLoaded', fmtInitAll);
+    </script>
+    @endpush
 </x-app-layout>

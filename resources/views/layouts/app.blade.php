@@ -41,7 +41,9 @@
             <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'warning', message: '{{ session('toast_warning') }}' } })))</script>
         @endif
         @if($errors->any())
-            <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', message: '{{ $errors->first() }}' } })))</script>
+             <script>document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', message: '{{ $errors->first() }}' } })))</script>
         @endif
+
+        @stack('scripts')
     </body>
 </html>

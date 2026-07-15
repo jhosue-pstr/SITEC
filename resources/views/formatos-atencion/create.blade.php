@@ -118,10 +118,102 @@
                         <input type="text" name="nombre_responsable" value="{{ $defaults['nombre_responsable'] ?? '' }}" class="w-full border rounded px-3 py-2 mt-1">
                     </div>
 
-                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Guardar Formato</button>
+                    <h3 class="font-semibold mt-6 mb-4">Firmas</h3>
+                    <p class="text-sm text-gray-500 mb-4">Firme con el dedo en pantalla táctil o con el mouse en PC.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Firma del Responsable (Técnico)</label>
+                            <canvas id="canvas-responsable" class="w-full h-40 border border-gray-300 rounded bg-gray-50 touch-none"></canvas>
+                            <button type="button" id="clear-responsable" class="mt-2 text-sm text-red-600">Limpiar</button>
+                            <input type="hidden" name="firma_responsable" id="firma_responsable">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1">Firma del Solicitante</label>
+                            <canvas id="canvas-solicitante" class="w-full h-40 border border-gray-300 rounded bg-gray-50 touch-none"></canvas>
+                            <button type="button" id="clear-solicitante" class="mt-2 text-sm text-red-600">Limpiar</button>
+                            <input type="hidden" name="firma_solicitante" id="firma_solicitante">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-6">Guardar Formato</button>
                     <a href="/tareas/{{ $tarea->id }}" class="ml-2 text-gray-600">Cancelar</a>
                 </form>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function initSignature(canvasId, inputId, clearId, existingUrl = null) {
+            const canvas = document.getElementById(canvasId);
+            const input = document.getElementById(inputId);
+            const ctx = canvas.getContext('2d');
+            let drawing = false;
+            let drawn = false;
+
+            function resize() {
+                const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * ratio;
+                canvas.height = rect.height * ratio;
+                ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = '#111827';
+
+                if (existingUrl && !drawn) {
+                    const img = new Image();
+                    img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                    img.src = existingUrl;
+                }
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function point(e) {
+                const rect = canvas.getBoundingClientRect();
+                return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            }
+
+            canvas.addEventListener('pointerdown', (e) => {
+                drawing = true;
+                drawn = true;
+                const p = point(e);
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                canvas.setPointerCapture(e.pointerId);
+                e.preventDefault();
+            });
+            canvas.addEventListener('pointermove', (e) => {
+                if (!drawing) return;
+                const p = point(e);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+                e.preventDefault();
+            });
+            const stop = (e) => { drawing = false; e.preventDefault(); };
+            canvas.addEventListener('pointerup', stop);
+            canvas.addEventListener('pointerleave', stop);
+
+            document.getElementById(clearId).addEventListener('click', () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                input.value = '';
+                drawn = false;
+            });
+
+            canvas.closest('form').addEventListener('submit', () => {
+                if (drawn) {
+                    input.value = canvas.toDataURL('image/png');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSignature('canvas-responsable', 'firma_responsable', 'clear-responsable', null);
+            initSignature('canvas-solicitante', 'firma_solicitante', 'clear-solicitante', null);
+        });
+    </script>
+    @endpush
 </x-app-layout>
