@@ -59,7 +59,7 @@ class TareaController extends Controller
 
     public function show(Tarea $tarea)
     {
-        $tarea->load(['solicitante', 'oficina', 'practicanteAsignado', 'atencion', 'evidencias.subidoPor', 'comentarios.usuario', 'asignaciones.practicante', 'notificaciones']);
+        $tarea->load(['solicitante', 'oficina', 'practicanteAsignado', 'atencion', 'formatoAtencion', 'evidencias.subidoPor', 'comentarios.usuario', 'asignaciones.practicante', 'notificaciones']);
 
         $oficinas = Oficina::all();
         $solicitantes = Usuario::whereIn('rol', ['solicitante', 'jefe'])->get();
