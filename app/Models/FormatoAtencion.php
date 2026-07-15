@@ -11,6 +11,11 @@ class FormatoAtencion extends Model
     protected $fillable = [
         'tarea_id',
         'equipo_id',
+        'tipo_equipo',
+        'codigo_patrimonial',
+        'numero_serie',
+        'marca',
+        'modelo',
         'nombres_solicitante',
         'apellidos_solicitante',
         'dni_solicitante',

@@ -11,7 +11,8 @@
         $pendientes = (clone $baseQuery)->where('estado', 'pendiente')->get();
         $enProceso = (clone $baseQuery)->whereIn('estado', ['asignado', 'en_proceso'])->get();
         $observadas = (clone $baseQuery)->where('estado', 'observado')->get();
-        $finalizadas = (clone $baseQuery)->where('estado', 'finalizado')->get();
+        $finalizadas = (clone $baseQuery)->where('estado', 'finalizado')
+            ->whereDate('fecha_finalizacion', now()->toDateString())->get();
         $countPracticantesActivos = Usuario::where('rol', 'practicante')->where('activo', true)->count();
     } elseif ($rol === 'practicante') {
         $pendientes = (clone $baseQuery)->where('estado', 'pendiente')
@@ -23,13 +24,15 @@
         $observadas = (clone $baseQuery)->where('practicante_asignado_id', $user->id)
             ->where('estado', 'observado')->get();
         $finalizadas = (clone $baseQuery)->where('practicante_asignado_id', $user->id)
-            ->where('estado', 'finalizado')->get();
+            ->where('estado', 'finalizado')
+            ->whereDate('fecha_finalizacion', now()->toDateString())->get();
         $countPracticantesActivos = null;
     } else {
         $pendientes = (clone $baseQuery)->where('solicitante_id', $user->id)->where('estado', 'pendiente')->get();
         $enProceso = (clone $baseQuery)->where('solicitante_id', $user->id)->whereIn('estado', ['asignado', 'en_proceso'])->get();
         $observadas = (clone $baseQuery)->where('solicitante_id', $user->id)->where('estado', 'observado')->get();
-        $finalizadas = (clone $baseQuery)->where('solicitante_id', $user->id)->where('estado', 'finalizado')->get();
+        $finalizadas = (clone $baseQuery)->where('solicitante_id', $user->id)->where('estado', 'finalizado')
+            ->whereDate('fecha_finalizacion', now()->toDateString())->get();
         $countPracticantesActivos = null;
     }
 

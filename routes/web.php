@@ -69,6 +69,8 @@ Route::middleware(['auth', 'rol:jefe,practicante'])->group(function () {
 
     Route::get('/formatos-atencion', [FormatoAtencionController::class, 'index'])->name('formatos-atencion.index');
     Route::get('/formatos-atencion/{formatoAtencion}', [FormatoAtencionController::class, 'show'])->name('formatos-atencion.show');
+    Route::get('/formatos-atencion/{formatoAtencion}/pdf', [FormatoAtencionController::class, 'pdf'])->name('formatos-atencion.pdf');
+    Route::post('/formatos-atencion/{formatoAtencion}/firma', [FormatoAtencionController::class, 'firma'])->name('formatos-atencion.firma');
 });
 
 // === TODOS autenticados (jefe, practicante, solicitante) ===
