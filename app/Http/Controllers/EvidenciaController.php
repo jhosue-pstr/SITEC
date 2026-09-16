@@ -29,7 +29,7 @@ class EvidenciaController extends Controller
     public function destroy(Evidencia $evidencia)
     {
         if ($evidencia->url_archivo && ! str_starts_with($evidencia->url_archivo, 'http')) {
-            Storage::disk('public')->delete($evidencia->url_archivo);
+            Storage::disk(config('filesystems.default'))->delete($evidencia->url_archivo);
         }
 
         $tarea_id = $evidencia->tarea_id;

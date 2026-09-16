@@ -65,6 +65,7 @@ class FormatoAtencionApiController extends Controller
 
     public function store(Request $request, Tarea $tarea)
     {
+        $disk = Storage::disk(config('filesystems.default'));
         $data = $request->except(['firma_responsable_data', 'firma_solicitante_data', 'firma_responsable_base64', 'firma_solicitante_base64']);
         $data['responsable_atencion_id'] = $request->user()->id;
 
@@ -73,14 +74,12 @@ class FormatoAtencionApiController extends Controller
             $data
         );
 
-        Storage::disk('public')->makeDirectory('firmas');
-
         foreach (['responsable', 'solicitante'] as $tipo) {
             $firmaData = $request->input("firma_{$tipo}_data") ?? $request->input("firma_{$tipo}_base64");
             if ($firmaData) {
                 $imageData = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $firmaData));
                 $filename = 'firmas/'.$tarea->codigo.'_'.$tipo.'_'.time().'.png';
-                file_put_contents(storage_path('app/public/'.$filename), $imageData);
+                $disk->put($filename, $imageData);
                 $campo = "firma_{$tipo}_url";
                 $formato->update([$campo => $filename]);
             }
@@ -100,14 +99,12 @@ class FormatoAtencionApiController extends Controller
         $data = $request->except(['firma_responsable_data', 'firma_solicitante_data', 'firma_responsable_base64', 'firma_solicitante_base64']);
         $formatoAtencion->update($data);
 
-        Storage::disk('public')->makeDirectory('firmas');
-
         foreach (['responsable', 'solicitante'] as $tipo) {
             $firmaData = $request->input("firma_{$tipo}_data") ?? $request->input("firma_{$tipo}_base64");
             if ($firmaData) {
                 $imageData = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $firmaData));
                 $filename = 'firmas/'.$formatoAtencion->tarea->codigo.'_'.$tipo.'_'.time().'.png';
-                file_put_contents(storage_path('app/public/'.$filename), $imageData);
+                Storage::disk(config('filesystems.default'))->put($filename, $imageData);
                 $campo = "firma_{$tipo}_url";
                 $formatoAtencion->update([$campo => $filename]);
             }
@@ -125,7 +122,7 @@ class FormatoAtencionApiController extends Controller
     public function destroy(FormatoAtencion $formatoAtencion)
     {
         if ($formatoAtencion->pdf_url) {
-            Storage::disk('public')->delete($formatoAtencion->pdf_url);
+            Storage::disk(config('filesystems.default'))->delete($formatoAtencion->pdf_url);
         }
         $formatoAtencion->delete();
 
@@ -139,18 +136,15 @@ class FormatoAtencionApiController extends Controller
     {
         $formatoAtencion->load('tarea', 'equipo', 'responsable');
 
-        if ($formatoAtencion->pdf_url && Storage::disk('public')->exists($formatoAtencion->pdf_url)) {
-            $fullPath = storage_path('app/public/'.$formatoAtencion->pdf_url);
-
-            return response()->download($fullPath, 'formato_atencion_'.$formatoAtencion->tarea->codigo.'.pdf');
+        $disk = Storage::disk(config('filesystems.default'));
+        if ($formatoAtencion->pdf_url && $disk->exists($formatoAtencion->pdf_url)) {
+            return $disk->download($formatoAtencion->pdf_url, 'formato_atencion_'.$formatoAtencion->tarea->codigo.'.pdf');
         }
 
         $this->generarPdf($formatoAtencion);
 
-        if ($formatoAtencion->pdf_url && Storage::disk('public')->exists($formatoAtencion->pdf_url)) {
-            $fullPath = storage_path('app/public/'.$formatoAtencion->pdf_url);
-
-            return response()->download($fullPath, 'formato_atencion_'.$formatoAtencion->tarea->codigo.'.pdf');
+        if ($formatoAtencion->pdf_url && $disk->exists($formatoAtencion->pdf_url)) {
+            return $disk->download($formatoAtencion->pdf_url, 'formato_atencion_'.$formatoAtencion->tarea->codigo.'.pdf');
         }
 
         return response()->json([
@@ -168,10 +162,8 @@ class FormatoAtencionApiController extends Controller
 
         $imageData = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $request->firma));
 
-        Storage::disk('public')->makeDirectory('firmas');
         $filename = 'firmas/'.$formatoAtencion->tarea->codigo.'_'.$request->tipo.'_'.time().'.png';
-        $path = storage_path('app/public/'.$filename);
-        file_put_contents($path, $imageData);
+        Storage::disk(config('filesystems.default'))->put($filename, $imageData);
 
         $campo = $request->tipo === 'responsable' ? 'firma_responsable_url' : 'firma_solicitante_url';
         $formatoAtencion->update([$campo => $filename]);
@@ -181,7 +173,7 @@ class FormatoAtencionApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'url' => asset('storage/'.$filename),
+                'url' => Storage::disk(config('filesystems.default'))->url($filename),
             ],
         ]);
     }
@@ -197,10 +189,11 @@ class FormatoAtencionApiController extends Controller
             ->setOption('isRemoteEnabled', true);
 
         $filename = 'formatos_atencion/formato_'.$formato->tarea->codigo.'_'.time().'.pdf';
-        $destino = storage_path('app/public/'.$filename);
-
-        Storage::disk('public')->makeDirectory('formatos_atencion');
+        $destino = tempnam(sys_get_temp_dir(), 'sitec_pdf_');
         $pdf->save($destino);
+        $disk = Storage::disk(config('filesystems.default'));
+        $disk->put($filename, fopen($destino, 'r'));
+        unlink($destino);
 
         $formato->update(['pdf_url' => $filename]);
     }

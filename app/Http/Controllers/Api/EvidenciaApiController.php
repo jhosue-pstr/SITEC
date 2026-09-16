@@ -12,6 +12,7 @@ class EvidenciaApiController extends Controller
 {
     public function store(Request $request, Tarea $tarea)
     {
+        $disk = Storage::disk(config('filesystems.default'));
         $data = [
             'tarea_id' => $tarea->id,
             'subido_por_id' => $request->user()->id,
@@ -21,7 +22,7 @@ class EvidenciaApiController extends Controller
         ];
 
         if ($request->hasFile('archivo')) {
-            $path = $request->file('archivo')->store('evidencias', 'public');
+            $path = $request->file('archivo')->store('evidencias', config('filesystems.default'));
             $data['url_archivo'] = $path;
             $data['nombre_archivo'] = $request->file('archivo')->getClientOriginalName();
         } elseif ($request->has('archivo_base64')) {
@@ -38,10 +39,7 @@ class EvidenciaApiController extends Controller
 
             $extension = pathinfo($data['nombre_archivo'], PATHINFO_EXTENSION) ?: 'png';
             $filename = 'evidencias/'.$tarea->codigo.'_'.time().'.'.$extension;
-            $fullPath = storage_path('app/public/'.$filename);
-
-            Storage::disk('public')->makeDirectory('evidencias');
-            file_put_contents($fullPath, $imageData);
+            $disk->put($filename, $imageData);
 
             $data['url_archivo'] = $filename;
         } else {
@@ -63,7 +61,7 @@ class EvidenciaApiController extends Controller
     public function destroy(Evidencia $evidencia)
     {
         if ($evidencia->url_archivo && ! str_starts_with($evidencia->url_archivo, 'http')) {
-            Storage::disk('public')->delete($evidencia->url_archivo);
+            Storage::disk(config('filesystems.default'))->delete($evidencia->url_archivo);
         }
 
         $evidencia->delete();
