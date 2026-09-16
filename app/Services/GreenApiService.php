@@ -23,11 +23,28 @@ class GreenApiService
     {
         $url = "{$this->baseUrl}/waInstance{$this->idInstance}/sendMessage/{$this->apiToken}";
 
-        $response = Http::post($url, [
-            'chatId' => $chatId,
-            'message' => $message,
-        ]);
+        try {
+            $response = Http::timeout(10)->post($url, [
+                'chatId' => $chatId,
+                'message' => $message,
+            ]);
 
-        return $response->successful();
+            if (! $response->successful()) {
+                \Log::error("Green API error sending to {$chatId}", [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error("Green API connection error sending to {$chatId}", [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

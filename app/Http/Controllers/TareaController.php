@@ -7,6 +7,7 @@ use App\Models\Notificacion;
 use App\Models\Oficina;
 use App\Models\Tarea;
 use App\Models\Usuario;
+use App\Services\GreenApiService;
 use Illuminate\Http\Request;
 
 class TareaController extends Controller
@@ -183,7 +184,7 @@ class TareaController extends Controller
         return redirect("/tareas/{$tarea->id}")->with('toast_success', 'Tarea auto-asignada');
     }
 
-    public function finalizar(Request $request, Tarea $tarea)
+    public function finalizar(Request $request, Tarea $tarea, GreenApiService $greenApi)
     {
         $tarea->update([
             'estado' => 'finalizado',
@@ -196,6 +197,13 @@ class TareaController extends Controller
             'titulo' => 'Tarea finalizada',
             'mensaje' => "La tarea {$tarea->codigo} ha sido finalizada",
         ]);
+
+        $solicitante = $tarea->solicitante;
+        if ($solicitante && $solicitante->telefono) {
+            $chatId = $solicitante->telefono.'@c.us';
+            $mensaje = "Hola {$solicitante->nombres}, tu solicitud *{$tarea->codigo}* ha sido atendida y finalizada. Puedes revisar los detalles en el sistema.";
+            $greenApi->sendMessage($chatId, $mensaje);
+        }
 
         return redirect("/tareas/{$tarea->id}/formatos-atencion/create")->with('toast_success', 'Tarea finalizada. Completa el formato de atención.');
     }

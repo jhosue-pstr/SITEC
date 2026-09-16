@@ -20,6 +20,7 @@ class Usuario extends Authenticatable
         'rol',
         'activo',
         'password',
+        'oficina_id',
     ];
 
     protected $hidden = [
@@ -38,5 +39,10 @@ class Usuario extends Authenticatable
     public function getEmailForPasswordReset()
     {
         return $this->correo;
+    }
+
+    public function oficina()
+    {
+        return $this->belongsTo(Oficina::class);
     }
 }

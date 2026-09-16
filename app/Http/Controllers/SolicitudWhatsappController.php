@@ -36,6 +36,10 @@ class SolicitudWhatsappController extends Controller
                         $texto = $msg['text']['body'] ?? '';
                         $nombre = $value['contacts'][0]['profile']['name'] ?? null;
 
+                        if (str_ends_with($numero, '@g.us')) {
+                            return response()->json(['status' => 'ignored_group']);
+                        }
+
                         SolicitudWhatsapp::create([
                             'numero_whatsapp' => $numero,
                             'mensaje_original' => $texto,
@@ -71,6 +75,11 @@ class SolicitudWhatsappController extends Controller
             };
             $chatId = $senderData['chatId'] ?? '';
             $senderName = $senderData['senderName'] ?? '';
+
+            if (str_ends_with($chatId, '@g.us')) {
+                return response()->json(['status' => 'ignored_group']);
+            }
+
             $numero = str_replace('@c.us', '', $chatId);
 
             if (! $numero) {
@@ -103,6 +112,11 @@ class SolicitudWhatsappController extends Controller
             };
             $chatId = $senderData['chatId'] ?? '';
             $senderName = $senderData['senderName'] ?? '';
+
+            if (str_ends_with($chatId, '@g.us')) {
+                return response()->json(['status' => 'ignored_group']);
+            }
+
             $numero = str_replace('@c.us', '', $chatId);
 
             if (! $numero) {

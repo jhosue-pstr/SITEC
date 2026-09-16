@@ -52,4 +52,21 @@ class EquipoController extends Controller
 
         return redirect('/equipos')->with('toast_success', 'Equipo eliminado');
     }
+
+    public function storeAjax(Request $request)
+    {
+        $request->validate([
+            'tipo_equipo' => 'required|string|max:50',
+            'codigo_patrimonial' => 'required|string|max:100|unique:equipos,codigo_patrimonial',
+            'numero_serie' => 'nullable|string|max:150|unique:equipos,numero_serie',
+            'marca' => 'nullable|string|max:100',
+            'modelo' => 'nullable|string|max:150',
+        ]);
+
+        $equipo = Equipo::create($request->only([
+            'tipo_equipo', 'codigo_patrimonial', 'numero_serie', 'marca', 'modelo',
+        ]));
+
+        return response()->json($equipo);
+    }
 }

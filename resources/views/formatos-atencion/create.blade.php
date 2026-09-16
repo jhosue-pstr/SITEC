@@ -36,19 +36,32 @@
                     </div>
                     <div class="p-6">
                         <div class="mb-5">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Seleccionar Equipo</label>
-                            <select name="equipo_id" x-model="selectedId" @change="fillFields()" class="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">— Seleccionar equipo existente —</option>
-                                @foreach($equipos as $equipo)
-                                <option value="{{ $equipo->id }}"
-                                    data-tipo="{{ $equipo->tipo_equipo }}"
-                                    data-codigo="{{ $equipo->codigo_patrimonial }}"
-                                    data-serie="{{ $equipo->numero_serie }}"
-                                    data-marca="{{ $equipo->marca }}"
-                                    data-modelo="{{ $equipo->modelo }}">{{ $equipo->tipo_equipo }} — {{ $equipo->codigo_patrimonial }}</option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-xs text-gray-400">Al seleccionar se autocompletarán los campos inferiores</p>
+                            <div class="flex items-end gap-3">
+                                <div class="flex-1 relative">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Buscar por Código Patrimonial</label>
+                                    <input type="text" x-model="searchQuery" @input="buscarEquipo()" @focus="buscarEquipo()" @click.away="showDropdown = false" placeholder="Escribí el código patrimonial..." class="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <input type="hidden" name="equipo_id" x-model="selectedId">
+                                    <div x-show="showDropdown && filteredEquipos.length > 0" x-transition class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        <template x-for="eq in filteredEquipos" :key="eq.id">
+                                            <div @click="seleccionarEquipo(eq)" class="px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-0">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-sm font-semibold text-blue-700" x-text="eq.codigo_patrimonial"></span>
+                                                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600" x-text="eq.tipo_equipo"></span>
+                                                </div>
+                                                <div class="flex gap-4 mt-1 text-xs text-gray-500">
+                                                    <span x-show="eq.marca"><strong>Marca:</strong> <span x-text="eq.marca"></span></span>
+                                                    <span x-show="eq.modelo"><strong>Modelo:</strong> <span x-text="eq.modelo"></span></span>
+                                                    <span x-show="eq.numero_serie"><strong>Serie:</strong> <span x-text="eq.numero_serie"></span></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <div x-show="showDropdown && searchQuery.length > 0 && filteredEquipos.length === 0" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
+                                        <p class="text-sm text-gray-500">No se encontró ningún equipo con ese código</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400">Escribí el código patrimonial para buscar. Al seleccionar se autocompletarán los campos inferiores</p>
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -72,6 +85,20 @@
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Modelo</label>
                                 <input type="text" name="modelo" x-model="modelo" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: EliteBook">
                             </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 mt-4">
+                            <button type="button" @click="guardarEquipo()" :disabled="savingEquipo" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+                                <template x-if="!savingEquipo">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                                </template>
+                                <template x-if="savingEquipo">
+                                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                </template>
+                                Guardar como nuevo equipo
+                            </button>
+                            <span x-show="equipoError" x-text="equipoError" class="text-red-500 text-sm"></span>
+                            <span x-show="equipoExito" x-text="equipoExito" class="text-green-600 text-sm"></span>
                         </div>
                     </div>
                 </div>
@@ -199,40 +226,6 @@
                     </div>
                 </div>
 
-                {{-- Firmas --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Firmas</h3>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <input type="hidden" name="firma_responsable_data" id="firma_responsable_data">
-                        <input type="hidden" name="firma_solicitante_data" id="firma_solicitante_data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div data-signature-pad data-tipo="responsable">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Firma del Responsable del Procedimiento</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white">
-                                    <canvas class="w-full" style="height: 150px;"></canvas>
-                                </div>
-                                <div class="flex gap-2 mt-2">
-                                    <button type="button" data-clear class="flex-1 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Limpiar</button>
-                                </div>
-                            </div>
-                            <div data-signature-pad data-tipo="solicitante">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Firma del Solicitante</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white">
-                                    <canvas class="w-full" style="height: 150px;"></canvas>
-                                </div>
-                                <div class="flex gap-2 mt-2">
-                                    <button type="button" data-clear class="flex-1 px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Limpiar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {{-- Botones --}}
                 <div class="flex items-center justify-end gap-3 mt-6 pb-8">
                     <a href="/tareas/{{ $tarea->id }}" class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
@@ -257,21 +250,75 @@
                 numeroSerie: @js($defaults['numero_serie'] ?? ''),
                 marca: @js($defaults['marca'] ?? ''),
                 modelo: @js($defaults['modelo'] ?? ''),
-                fillFields() {
-                    const select = document.querySelector('select[name="equipo_id"]');
-                    const option = select.options[select.selectedIndex];
-                    if (this.selectedId) {
-                        this.tipoEquipo = option.dataset.tipo || '';
-                        this.codigoPatrimonial = option.dataset.codigo || '';
-                        this.numeroSerie = option.dataset.serie || '';
-                        this.marca = option.dataset.marca || '';
-                        this.modelo = option.dataset.modelo || '';
+                showDropdown: false,
+                savingEquipo: false,
+                equipoError: '',
+                equipoExito: '',
+                searchQuery: @js($defaults['codigo_patrimonial'] ?? ''),
+                equipos: @js($equipos->map(fn($e) => ['id' => $e->id, 'tipo_equipo' => $e->tipo_equipo, 'codigo_patrimonial' => $e->codigo_patrimonial, 'numero_serie' => $e->numero_serie, 'marca' => $e->marca, 'modelo' => $e->modelo])->toArray()),
+                filteredEquipos: [],
+                buscarEquipo() {
+                    const q = this.searchQuery.toLowerCase().trim();
+                    if (q.length === 0) {
+                        this.filteredEquipos = this.equipos;
                     } else {
-                        this.tipoEquipo = '';
-                        this.codigoPatrimonial = '';
-                        this.numeroSerie = '';
-                        this.marca = '';
-                        this.modelo = '';
+                        this.filteredEquipos = this.equipos.filter(e =>
+                            (e.codigo_patrimonial && e.codigo_patrimonial.toLowerCase().includes(q)) ||
+                            (e.tipo_equipo && e.tipo_equipo.toLowerCase().includes(q)) ||
+                            (e.marca && e.marca.toLowerCase().includes(q)) ||
+                            (e.modelo && e.modelo.toLowerCase().includes(q))
+                        );
+                    }
+                    this.showDropdown = true;
+                },
+                seleccionarEquipo(eq) {
+                    this.selectedId = eq.id;
+                    this.searchQuery = eq.codigo_patrimonial;
+                    this.tipoEquipo = eq.tipo_equipo || '';
+                    this.codigoPatrimonial = eq.codigo_patrimonial || '';
+                    this.numeroSerie = eq.numero_serie || '';
+                    this.marca = eq.marca || '';
+                    this.modelo = eq.modelo || '';
+                    this.showDropdown = false;
+                },
+                async guardarEquipo() {
+                    this.equipoError = '';
+                    this.equipoExito = '';
+                    if (!this.tipoEquipo || !this.codigoPatrimonial) {
+                        this.equipoError = 'Tipo y Código Patrimonial son obligatorios';
+                        return;
+                    }
+                    this.savingEquipo = true;
+                    try {
+                        const res = await fetch('/equipos/ajax', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                tipo_equipo: this.tipoEquipo,
+                                codigo_patrimonial: this.codigoPatrimonial,
+                                numero_serie: this.numeroSerie || null,
+                                marca: this.marca || null,
+                                modelo: this.modelo || null,
+                            }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.equipoError = data.message || 'Error al guardar';
+                            return;
+                        }
+                        this.equipos.push(data);
+                        this.selectedId = data.id;
+                        this.searchQuery = data.codigo_patrimonial;
+                        this.equipoExito = 'Equipo guardado correctamente';
+                        setTimeout(() => this.equipoExito = '', 3000);
+                    } catch (e) {
+                        this.equipoError = 'Error de conexión';
+                    } finally {
+                        this.savingEquipo = false;
                     }
                 }
             }
